@@ -1,0 +1,71 @@
+.\"
+.\"Copyright (c) 2021 Sean Davies <sean@city17.org>
+.\"
+.\"Permission to use, copy, modify, and distribute this software for any
+.\"purpose with or without fee is hereby granted, provided that the above
+.\"copyright notice and this permission notice appear in all copies.
+.\"
+.\"THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+.\"WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+.\"MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+.\"ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+.\"WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+.\"ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+.\"OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+.\"
+.Dd $Mdocdate: July 12 2021 $
+.Dt UNBOUND-BADHOSTS 8
+.Os
+.Sh NAME
+.Nm unbound-badhosts
+.Nd fetch blocklists for use with unbound
+.Sh SYNOPSIS
+.Nm
+.Op Fl fgpsx | v
+.Sh DESCRIPTION
+.Nm
+is a utility that will fetch and process host file blocklists so it can be
+used with the
+.Xr unbound 8
+DNS resolver.
+.Pp
+When run without any options,
+.Nm
+will create a blocklist containing adware and malware data, and attempt to
+reload
+.Xr unbound 8 .
+Variants to this default blocklist can be specified by passing one or more
+optional flags.
+.Pp
+Alternativly, the processed blocklist data can printed to stdout.
+.Pp
+The options are as follows:
+.Bl -tag -width Ds
+.It Fl f
+Include fake news sites in the blocklist.
+.It Fl g
+Include gambling sites in the blocklist.
+.It Fl p
+Include adult sites in the blocklist.
+.It Fl s
+Include social media sites in the blocklist.
+.It Fl v
+Print version information and exit.
+.It Fl x
+Print blocklist data to stout and exit.
+.El
+.Sh FILES
+.Bl -tag -width "/var/unbound/etc/badhosts" -compact
+.It Pa /var/unbound/etc/badhosts
+Location of saved blocklist.
+.El
+.Sh EXIT STATUS
+.Ex -std
+.Sh SEE ALSO
+.Xr unbound.conf 5 ,
+.Xr unbound 8 ,
+.Xr unbound-control 8
+.Pp
+.Lk https://github.com/StevenBlack/hosts
+.Sh AUTHORS
+.An Sean Davies Aq Mt sean@city17.org
