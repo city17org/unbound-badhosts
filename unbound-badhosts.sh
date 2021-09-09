@@ -17,7 +17,7 @@
 set -e
 umask 0077
 
-__version=0.1
+__version=0.2
 
 blocklist=/var/unbound/etc/badhosts
 
@@ -41,10 +41,9 @@ cleanup()
 
 droproot()
 {
-	local _ret=0 _user=_ftp
+	local _user=_ftp
 
-	eval su -s /bin/sh ${_user} -c "'$*'" || _ret=$?
-	return ${_ret}
+	eval su -s /bin/sh ${_user} -c "'$*'" || exit 1
 }
 
 mktmpfile()
@@ -62,13 +61,18 @@ mktmpfile()
 
 fetchblocklist()
 {
-	local _list=$1
+	local _data _list=$1
 
-	if [ "${xflag}" -eq 0 ]; then
-		droproot ftp -N "${0##*/}" -MVo - "${_list}" || exit 1
+	if [ "${xflag}" -eq 0 ] || [ "$(id -u)" -eq 0 ]; then
+		_data=$(droproot ftp -N "${0##*/}" -MVo - "${_list}")
 	else
-		ftp -N "${0##*/}" -MVo - "${_list}" || exit 1
+		_data=$(ftp -N "${0##*/}" -MVo - "${_list}") || exit 1
 	fi
+
+	if [ -z "${_data}" ]; then
+		die "${0##*/}: failed to download blocklist"
+	fi
+	echo "${_data}" | processblocklist
 }
 
 processblocklist()
@@ -76,6 +80,10 @@ processblocklist()
 	awk '/^0\.0\.0\.0/ {
 		print "local-zone: \""$2"\" redirect\nlocal-data: \""$2" A 0.0.0.0\""
 	}' >"${tmpfile}"
+
+	if [ ! -s "${tmpfile}" ]; then
+		die "${0##*/}: failed to create blocklist"
+	fi
 }
 
 blocklisturl()
@@ -129,12 +137,10 @@ done
 shift $((OPTIND - 1))
 [ "$#" -eq 0 ] || usage
 
-if [ "${vflag}" -eq 1 ] && [ "${xflag}" -eq 1 ]; then
-	usage
-fi
-
 if [ "${vflag}" -eq 1 ]; then
-	[ "${list}" -eq 1 ] || usage
+	if [ "${list}" -gt 1 ] || [ "${xflag}" -eq 1 ]; then
+		usage
+	fi
 	echo "${0##*/}-${__version}"
 	exit 0
 fi
@@ -152,7 +158,7 @@ fi
 trap 'cleanup' EXIT
 tmpfile=$(mktmpfile)
 
-fetchblocklist "$(blocklisturl)" | processblocklist
+fetchblocklist "$(blocklisturl)"
 if [ "${xflag}" -eq 0 ]; then
 	if ! cmp "${tmpfile}" ${blocklist} >/dev/null 2>&1; then
 		if [ -f "${blocklist}" ]; then
