@@ -115,8 +115,8 @@ blocklisturl()
 list=1
 vflag=0
 xflag=0
-while getopts "fgpsvx" opt; do
-	case "${opt}" in
+while getopts fgpsvx arg; do
+	case ${arg} in
 	f)	[ "${fflag:-0}" -eq 0 ] || usage
 		fflag=1
 		list=$((list + 2)) ;;
