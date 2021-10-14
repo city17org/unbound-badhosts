@@ -56,7 +56,8 @@ mktmpfile()
 			die "${0##*/}: failed to create temp file"
 		fi
 	done
-	echo "${_file}"
+	touch "${_file}"
+	tmpfile="${_file}"
 }
 
 fetchblocklist()
@@ -156,7 +157,7 @@ if [ "${xflag}" -eq 0 ]; then
 fi
 
 trap 'cleanup' EXIT
-tmpfile=$(mktmpfile)
+mktmpfile
 
 fetchblocklist "$(blocklisturl)"
 if [ "${xflag}" -eq 0 ]; then
