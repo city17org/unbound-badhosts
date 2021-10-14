@@ -17,7 +17,7 @@
 set -e
 umask 0077
 
-__version=0.2
+__version=0.3
 
 blocklist=/var/unbound/etc/badhosts
 
