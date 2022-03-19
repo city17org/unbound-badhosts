@@ -57,7 +57,7 @@ mktmpfile()
 		fi
 	done
 	touch "${_file}"
-	tmpfile="${_file}"
+	echo "${_file}"
 }
 
 fetchblocklist()
@@ -157,9 +157,10 @@ if [ "${xflag}" -eq 0 ]; then
 fi
 
 trap 'cleanup' EXIT
-mktmpfile
 
+tmpfile=$(mktmpfile)
 fetchblocklist "$(blocklisturl)"
+
 if [ "${xflag}" -eq 0 ]; then
 	if ! cmp "${tmpfile}" ${blocklist} >/dev/null 2>&1; then
 		if [ -f "${blocklist}" ]; then
