@@ -43,7 +43,7 @@ droproot()
 {
 	local _user=_ftp
 
-	eval su -s /bin/sh ${_user} -c "'$*'" || exit 1
+	eval su -s /bin/sh "${_user}" -c "'$*'" || exit 1
 }
 
 mktmpfile()
@@ -52,7 +52,7 @@ mktmpfile()
 
 	until _file=/tmp/${0##*/}.$(openssl rand -hex 8) && [ ! -f "${_file}" ]; do
 		_i=$((_i + 1))
-		if [ "$_i" -ge 1000 ]; then
+		if [ "${_i}" -ge 1000 ]; then
 			die "${0##*/}: failed to create temp file"
 		fi
 	done
@@ -62,7 +62,7 @@ mktmpfile()
 
 fetchblocklist()
 {
-	local _data _list=$1
+	local _data _list="$1"
 
 	if [ "${xflag}" -eq 0 ] || [ "$(id -u)" -eq 0 ]; then
 		_data=$(droproot ftp -N "${0##*/}" -MVo - "${_list}")
@@ -110,7 +110,7 @@ blocklisturl()
 	31)	_url='https://raw.githubusercontent.com/StevenBlack/hosts/master/alternates/fakenews-gambling-porn-social/hosts' ;;
 	*)	die "${0##*/}: internal error" ;;
 	esac
-	echo ${_url}
+	echo "${_url}"
 }
 
 list=1
@@ -162,11 +162,11 @@ tmpfile=$(mktmpfile)
 fetchblocklist "$(blocklisturl)"
 
 if [ "${xflag}" -eq 0 ]; then
-	if ! cmp "${tmpfile}" ${blocklist} >/dev/null 2>&1; then
+	if ! cmp "${tmpfile}" "${blocklist}" >/dev/null 2>&1; then
 		if [ -f "${blocklist}" ]; then
-			mv -f ${blocklist} ${blocklist}.bck
+			mv -f "${blocklist}" "${blocklist}.bck"
 		fi
-		install -Fm 644 "${tmpfile}" ${blocklist}
+		install -Fm 644 "${tmpfile}" "${blocklist}"
 		unbound-control reload >/dev/null
 	fi
 	if ! grep -Eq "include: \"?${blocklist}\"?" /var/unbound/etc/unbound.conf; then
