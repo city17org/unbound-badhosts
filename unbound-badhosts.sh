@@ -15,9 +15,8 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 set -e
-umask 0077
 
-__version=0.3
+__version=0.4
 
 blocklist=/var/unbound/etc/badhosts
 
@@ -32,32 +31,11 @@ usage()
 	die "usage: ${0##*/} [-fgpsx | -v]"
 }
 
-cleanup()
-{
-	if [ -f "${tmpfile}" ]; then
-		rm -f "${tmpfile}"
-	fi
-}
-
 droproot()
 {
 	local _user=_ftp
 
 	eval su -s /bin/sh "${_user}" -c "'$*'" || exit 1
-}
-
-mktmpfile()
-{
-	local _i=0 _file
-
-	until _file=/tmp/${0##*/}.$(openssl rand -hex 8) && [ ! -f "${_file}" ]; do
-		_i=$((_i + 1))
-		if [ "${_i}" -ge 1000 ]; then
-			die "${0##*/}: failed to create temp file"
-		fi
-	done
-	touch "${_file}"
-	echo "${_file}"
 }
 
 fetchblocklist()
@@ -70,19 +48,12 @@ fetchblocklist()
 		_data=$(ftp -N "${0##*/}" -MVo - "${_list}") || exit 1
 	fi
 
-	if [ -z "${_data}" ]; then
-		die "${0##*/}: failed to download blocklist"
-	fi
-	echo "${_data}" | processblocklist
-}
+	_blocklist=$(echo "${_data}" | \
+		awk '/^0\.0\.0\.0/ {
+			print "local-zone: \""$2"\" redirect\nlocal-data: \""$2" A 0.0.0.0\""
+		}')
 
-processblocklist()
-{
-	awk '/^0\.0\.0\.0/ {
-		print "local-zone: \""$2"\" redirect\nlocal-data: \""$2" A 0.0.0.0\""
-	}' >"${tmpfile}"
-
-	if [ ! -s "${tmpfile}" ]; then
+	if [ -z "${_blocklist}" ]; then
 		die "${0##*/}: failed to create blocklist"
 	fi
 }
@@ -156,22 +127,21 @@ if [ "${xflag}" -eq 0 ]; then
 	fi
 fi
 
-trap 'cleanup' EXIT
-
-tmpfile=$(mktmpfile)
 fetchblocklist "$(blocklisturl)"
 
 if [ "${xflag}" -eq 0 ]; then
-	if ! cmp "${tmpfile}" "${blocklist}" >/dev/null 2>&1; then
-		if [ -f "${blocklist}" ]; then
-			mv -f "${blocklist}" "${blocklist}.bck"
+	if [ -f "${blocklist}" ]; then
+		if [ "${_blocklist}" = "$(cat "${blocklist}")" ]; then
+			exit 0
 		fi
-		install -Fm 644 "${tmpfile}" "${blocklist}"
-		unbound-control reload >/dev/null
+		mv -f "${blocklist}" "${blocklist}.bck"
 	fi
+	echo "${_blocklist}" >"${blocklist}"
+	unbound-control reload >/dev/null
+
 	if ! grep -Eq "include: \"?${blocklist}\"?" /var/unbound/etc/unbound.conf; then
 		die "${0##*/}: unbound.conf: include statement missing"
 	fi
 else
-	cat "${tmpfile}"
+	echo "${_blocklist}"
 fi
