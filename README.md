@@ -39,7 +39,7 @@ The options are as follows:
 
 **-p**
 
-> Include adult sites in the blocklist.
+> Include porn sites in the blocklist.
 
 **-s**
 
